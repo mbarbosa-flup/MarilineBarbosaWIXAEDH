@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Históriaman — Mariline Barbosa</title>
+  <style>
+    :root{
+      --bg:#0b1020; --ink:#e7ecff; --muted:#9fb0ff;
+      --accent:#7cf7c5; --warn:#ffcc66; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      background: radial-gradient(1200px 700px at 60% 20%, #1a2a66 0%, var(--bg) 60%);
+      color:var(--ink);
+      display:flex; min-height:100vh; align-items:center; justify-content:center;
+      padding:16px;
+    }
+    .wrap{
+      width:min(980px,100%); display:grid; gap:14px;
+      grid-template-columns: 1.2fr .8fr;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .topbar{
+      padding:12px 14px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      background: rgba(0,0,0,.18);
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .title{display:flex; flex-direction:column; gap:2px}
+    .title b{font-size:14px; letter-spacing:.2px}
+    .title span{font-size:12px; color:var(--muted); line-height:1.2}
+    .hud{display:flex; gap:10px; align-items:center; font-size:12px; color:var(--muted); flex-wrap:wrap; justify-content:flex-end}
+    .pill{
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      white-space:nowrap;
+    }
+    canvas{display:block; width:100%; height:auto; background: rgba(0,0,0,.25)}
+    .side{padding:14px; display:flex; flex-direction:column; gap:12px}
+    .side h2{margin:0; font-size:14px}
+    .side p{margin:0; font-size:12px; color:var(--muted); line-height:1.35}
+    .btnrow{display:flex; gap:10px; flex-wrap:wrap}
+    button{
+      cursor:pointer; border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.22); color:var(--ink);
+      padding:10px 12px; border-radius:12px; font-weight:700; font-size:12px;
+    }
+    button:hover{border-color: rgba(255,255,255,.30)}
+    .kbd{
+      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:11px; padding:2px 6px; border-radius:8px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18); color:var(--ink)
+    }
+    .legend{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .legend .item{
+      padding:10px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.16);
+      font-size:12px; color:var(--muted);
+    }
+    .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:-1px}
+    .dot.p{background:var(--accent)}
+    .dot.b{background:var(--warn)}
+    .dot.g{background:var(--danger)}
+
+    /* Overlays */
+    .overlay{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.62); padding:16px;
+    }
+    .overlay.show{display:flex}
+    .box{
+      width:min(760px,100%);
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(18,26,51,.98), rgba(10,14,28,.98));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 25px 80px rgba(0,0,0,.55);
+      padding:14px;
+    }
+    .qhead{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .qhead b{font-size:14px}
+    .qhead span{font-size:12px; color:var(--muted)}
+    .qtext{margin:10px 0 12px; font-size:13px; line-height:1.35}
+    .answers{display:grid; gap:10px}
+    .answers button{ text-align:left; padding:10px 12px; border-radius:14px; background: rgba(0,0,0,.18); }
+    .feedback{
+      margin-top:12px; padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color:var(--muted); font-size:12px; line-height:1.35;
+      display:none;
+    }
+    .feedback.show{display:block}
+    .ok{color:var(--accent)}
+    .no{color:var(--danger)}
+    .footer{display:flex; justify-content:flex-end; gap:10px; margin-top:12px; flex-wrap:wrap}
+
+    .bigTitle{font-size:18px; font-weight:900; margin:2px 0 6px}
+    .small{font-size:12px; color:var(--muted); line-height:1.35; margin:0}
+    .split{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px}
+    @media (max-width: 860px){ .wrap{grid-template-columns:1fr} .split{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="topbar">
+        <div class="title">
+          <b>Históriaman — Mariline Barbosa</b>
+          <span>Apanha pergaminhos, responde a desafios e descobre curiosidades sobre a autora.</span>
+        </div>
+        <div class="hud">
+          <span class="pill">Pontuação: <b id="score">0</b></span>
+          <span class="pill">Vidas: <b id="lives">3</b></span>
+          <span class="pill">Pergaminhos: <b id="left">0</b></span>
+          <span class="pill">Relíquia: <b id="freeze">0</b>s</span>
+        </div>
+      </div>
+      <canvas id="game" width="720" height="520"></canvas>
+    </div>
+
+    <div class="card side">
+      <h2>Controlos</h2>
+      <p>
+        Move com <span class="kbd">↑ ↓ ← →</span> ou <span class="kbd">W A S D</span>.
+        Apanha <span class="dot p"></span><b>pergaminhos</b> (perguntas) e <span class="dot b"></span><b>relíquias</b> (congelam o fantasma).
+      </p>
+
+      <div class="legend">
+        <div class="item"><span class="dot p"></span><b>Pergaminho</b><br/>Desbloqueia um desafio com feedback.</div>
+        <div class="item"><span class="dot b"></span><b>Relíquia</b><br/>Congela o fantasma por alguns segundos.</div>
+        <div class="item"><span class="dot g"></span><b>Fantasma</b><br/>Toca e perdes 1 vida (o clássico susto!).</div>
+        <div class="item"><b>Objetivo</b><br/>Apanha tudo e responde bem. Fácil de dizer…</div>
+      </div>
+
+      <div class="btnrow">
+        <button id="restart">Reiniciar</button>
+        <button id="shuffle">Baralhar perguntas</button>
+        <button id="sound">Som: Desligado</button>
+      </div>
+
+      <p style="margin-top:2px">
+        <b>Nota:</b> há anacronismos propositados (humor leve). O feedback esclarece a ideia.
+      </p>
+    </div>
+  </div>
+
+  <!-- Ecrã inicial (neutro) -->
+  <div class="overlay show" id="start">
+    <div class="box">
+      <div class="bigTitle">Históriaman</div>
+      <p class="small">
+        Um mini-jogo estilo Pac-Man: apanha pergaminhos para desbloquear desafios e descobrir curiosidades sobre a autora.
+        Responde, recebe feedback e avança até apanhar tudo.
+      </p>
+      <div class="split">
+        <div>
+          <p class="small"><b>Como jogar</b><br>
+            Move com setas/WASD. Resposta certa dá pontos; errada tira 1 vida.
+            Apanha relíquias para congelar o fantasma.
+          </p>
+        </div>
+        <div>
+          <p class="small"><b>Nota</b><br>
+            Algumas perguntas usam humor leve e anacronismos propositados — o feedback explica a intenção.
+          </p>
+        </div>
+      </div>
+      <div class="footer">
+        <button id="startBtn">Começar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Perguntas -->
+  <div class="overlay" id="modal">
+    <div class="box">
+      <div class="qhead">
+        <b id="qtitle">Pergunta</b>
+        <span id="qmeta">Desafio</span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="answers" id="answers"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="footer">
+        <button id="continue" disabled>Continuar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const AUTHOR_NAME = "Mariline Barbosa";
+
+  // Perguntas (mantêm feedback pedagógico, mas tags discretas)
+  const QUESTIONS = [
+    {
+      title: "Pergaminho I — Percurso",
+      q: "Curiosidade: antes do Mestrado em Ensino de História, a minha base profissional passou sobretudo por:",
+      options: [
+        "Arqueologia subaquática (apenas em marés muito baixas).",
+        "Hotelaria e restauração.",
+        "Cartografia medieval com GPS (um anacronismo… assumido)."
+      ],
+      correct: 1,
+      ok: "Certo. Este percurso traz competências transferíveis (organização, comunicação, gestão de públicos) que pretendo mobilizar quando estiver a lecionar.",
+      no: "Não — foi hotelaria e restauração. A ideia aqui é perceber como experiências profissionais podem informar opções pedagógicas futuras.",
+      tag: "Identidade e competências"
+    },
+    {
+      title: "Pergaminho II — Negócio próprio",
+      q: "Outra curiosidade: ter tido um negócio próprio ensinou-me sobretudo a:",
+      options: [
+        "Governar como D. João II (com menos conspirações, espero).",
+        "Planear, testar e melhorar com base em feedback real.",
+        "Assinar tratados internacionais com o gato (ele é exigente)."
+      ],
+      correct: 1,
+      ok: "Certo. Levo esta lógica para a sala de aula: planear, recolher evidências e ajustar estratégias para que o aluno aprenda.",
+      no: "Quase… o essencial é planear e iterar com feedback. Isso aplica-se muito bem ao desenho de atividades e recursos.",
+      tag: "Planeamento e melhoria"
+    },
+    {
+      title: "Pergaminho III — Formação profissional",
+      q: "A minha experiência em formação profissional faz-me valorizar mais:",
+      options: [
+        "Aulas só expositivas (o aluno que aprenda por osmose).",
+        "Aprendizagem ativa: fazer, experimentar e refletir.",
+        "Copiar apontamentos como num scriptorium (com pena de ganso)."
+      ],
+      correct: 1,
+      ok: "Certo. Aulas ativas tendem a envolver mais o aluno e a favorecer compreensão, não apenas memorização.",
+      no: "A intenção é privilegiar participação e prática. O aluno constrói conhecimento quando faz e reflete.",
+      tag: "Aprendizagem ativa"
+    },
+    {
+      title: "Pergaminho IV — Tema preferido",
+      q: "O tema que mais me entusiasma é História Digital. Quando estiver a lecionar, quero usar o digital sobretudo para:",
+      options: [
+        "Fazer ‘slides infinitos’ (o verdadeiro castigo medieval).",
+        "Apoiar investigação, análise e contextualização do passado.",
+        "Trocar pensamento histórico por efeitos especiais (brilha, logo aprende)."
+      ],
+      correct: 1,
+      ok: "Certo. O digital faz sentido quando ajuda a analisar, contextualizar e argumentar com base em evidências.",
+      no: "A ideia é usar o digital como meio para aprofundar a compreensão histórica, não como fim em si mesmo.",
+      tag: "Pensamento histórico"
+    },
+    {
+      title: "Pergaminho V — Anacronismo controlado",
+      q: "Se Fernão Lopes tivesse Wi-Fi, ele diria que um bom recurso digital de História deve:",
+      options: [
+        "Ser usado só porque existe (e porque pisca).",
+        "Ter intencionalidade e promover participação.",
+        "Eliminar fontes históricas (porque ‘a internet resolve’)."
+      ],
+      correct: 1,
+      ok: "Certo. Humor à parte: o essencial é a intencionalidade pedagógica e o envolvimento do aluno.",
+      no: "Não basta tecnologia. O recurso tem de ter propósito e apoiar aprendizagem significativa.",
+      tag: "Intencionalidade"
+    },
+    {
+      title: "Pergaminho VI — Estilo de aula",
+      q: "Quero aulas ativas e criativas. Isso significa, na prática:",
+      options: [
+        "Alunos sempre a clicar, mesmo sem objetivo (clique = conhecimento).",
+        "Tarefas com objetivos claros, orientação e reflexão.",
+        "Só jogos — porque o manual foi para o museu (com bilhete)."
+      ],
+      correct: 1,
+      ok: "Certo. Criatividade com estrutura: objetivos, orientação, feedback e reflexão.",
+      no: "O importante é que a participação tenha sentido e esteja ligada a objetivos de aprendizagem.",
+      tag: "Metodologia"
+    },
+    {
+      title: "Pergaminho VII — Receio (honesto)",
+      q: "Um receio real: não ser uma boa professora. A resposta mais útil para lidar com isso é:",
+      options: [
+        "Fingir confiança e ignorar evidências (nunca falha… até falhar).",
+        "Planear, recolher feedback e ajustar práticas.",
+        "Esperar um deus ex machina (clássico, mas pouco didático)."
+      ],
+      correct: 1,
+      ok: "Certo. Melhorar com base em evidências e feedback é uma estratégia profissional sólida.",
+      no: "O caminho mais seguro é refletir, recolher feedback e ajustar — em vez de depender de ‘sorte pedagógica’.",
+      tag: "Reflexão e melhoria"
+    },
+    {
+      title: "Pergaminho VIII — Objetivo final",
+      q: "O meu objetivo central é que o aluno aprenda. Isso traduz-se em:",
+      options: [
+        "Muito conteúdo, pouca compreensão (a ‘enciclopédia’ vence).",
+        "Atividades e recursos que favoreçam compreensão e construção de conhecimento.",
+        "Trocar História por apps (mais rápido, menos pensar)."
+      ],
+      correct: 1,
+      ok: "Certo. O foco é aprendizagem com significado: compreender, contextualizar e pensar historicamente.",
+      no: "Mais tecnologia não garante mais aprendizagem. O centro é sempre a compreensão do aluno.",
+      tag: "Aprendizagem com significado"
+    }
+  ];
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const leftEl  = document.getElementById('left');
+  const freezeEl= document.getElementById('freeze');
+
+  const startOverlay = document.getElementById('start');
+  const startBtn = document.getElementById('startBtn');
+
+  const modal = document.getElementById('modal');
+  const qtitle = document.getElementById('qtitle');
+  const qmeta  = document.getElementById('qmeta');
+  const qtext  = document.getElementById('qtext');
+  const answersEl = document.getElementById('answers');
+  const feedbackEl = document.getElementById('feedback');
+  const continueBtn = document.getElementById('continue');
+
+  const restartBtn = document.getElementById('restart');
+  const shuffleBtn = document.getElementById('shuffle');
+  const soundBtn = document.getElementById('sound');
+
+  // Som simples (sem ficheiros externos)
+  let audioOn = false;
+  let audioCtx = null;
+  function ensureAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+  function blip(freq=440, dur=0.05){
+    if(!audioOn) return;
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "square";
+    o.frequency.value = freq;
+    g.gain.value = 0.05;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + dur);
+  }
+
+  // Mapa: 0 vazio, 1 parede, 2 pergaminho, 3 relíquia, 4 start fantasma
+  const MAP_W = 24, MAP_H = 17;
+  const TILE = 30;
+  const MAP = [
+    "111111111111111111111111",
+    "120000000000001000000021",
+    "101111011111101011111101",
+    "100001000001001000001001",
+    "101101111101111101110101",
+    "100100000001000000010001",
+    "111101011111011111010111",
+    "100001010000000001010001",
+    "101111010111111101011101",
+    "100000010100000001000001",
+    "101111110101111101111101",
+    "100000000001000000000001",
+    "101111011111011111011101",
+    "100001000000000000010001",
+    "101101111011111110110101",
+    "120000000000004000300021",
+    "111111111111111111111111"
+  ].map(r => r.split("").map(ch => Number(ch)));
+
+  let grid, pellets = [];
+  function resetGrid(){
+    grid = MAP.map(row => row.slice());
+    pellets = [];
+    for(let y=0;y<MAP_H;y++){
+      for(let x=0;x<MAP_W;x++){
+        if(grid[y][x]===2) pellets.push({x,y, kind:"q", used:false});
+        if(grid[y][x]===3) pellets.push({x,y, kind:"b", used:false});
+      }
+    }
+  }
+
+  const player = { x: 1.5*TILE, y: 1.5*TILE, r: 11, vx:0, vy:0, speed:2.25, mouth:0 };
+  const ghost  = { x: 15.5*TILE, y: 15.5*TILE, r: 11, vx:1.6, vy:0, speed:1.75, dirTimer:0 };
+
+  let score=0, lives=3;
+  let qIndexOrder = [], qCursor = 0;
+  let pausedForQuestion = true; // começa parado até "Começar"
+  let won=false, lost=false;
+
+  // Relíquia: congela fantasma
+  let freezeTimer = 0; // frames
+  const FREEZE_SECONDS = 5;
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+  function resetQuestions(){
+    qIndexOrder = shuffle([...Array(QUESTIONS.length).keys()]);
+    qCursor = 0;
+  }
+
+  function resetAll(){
+    won=false; lost=false;
+    score=0; lives=3;
+    player.x=1.5*TILE; player.y=1.5*TILE; player.vx=0; player.vy=0;
+    ghost.x=15.5*TILE; ghost.y=15.5*TILE; ghost.vx=ghost.speed; ghost.vy=0; ghost.dirTimer=0;
+    freezeTimer = 0;
+    resetGrid();
+    resetQuestions();
+    updateHUD();
+    closeModal();
+    startOverlay.classList.add("show");
+    pausedForQuestion = true;
+  }
+
+  function updateHUD(){
+    scoreEl.textContent = String(score);
+    livesEl.textContent = String(lives);
+    const remaining = pellets.filter(p => p.kind==="q" && !p.used).length;
+    leftEl.textContent = String(remaining);
+    freezeEl.textContent = String(Math.max(0, Math.ceil(freezeTimer/60)));
+  }
+
+  function tileAt(px,py){
+    const x = Math.floor(px / TILE);
+    const y = Math.floor(py / TILE);
+    if(x<0||y<0||x>=MAP_W||y>=MAP_H) return 1;
+    return grid[y][x];
+  }
+  function canMoveTo(px,py,r){
+    const pts = [[px-r, py-r],[px+r, py-r],[px-r, py+r],[px+r, py+r]];
+    return pts.every(([x,y]) => tileAt(x,y)!==1);
+  }
+
+  const keys = new Set();
+  window.addEventListener('keydown', (e)=>{
+    const k = e.key.toLowerCase();
+    if(["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d"].includes(k)){
+      e.preventDefault();
+      keys.add(k);
+    }
+  });
+  window.addEventListener('keyup', (e)=> keys.delete(e.key.toLowerCase()));
+
+  function handleInput(){
+    if(pausedForQuestion || won || lost) return;
+    let vx=0, vy=0;
+    if(keys.has("arrowleft")||keys.has("a")) vx=-1;
+    if(keys.has("arrowright")||keys.has("d")) vx=1;
+    if(keys.has("arrowup")||keys.has("w")) vy=-1;
+    if(keys.has("arrowdown")||keys.has("s")) vy=1;
+    const sp = player.speed;
+    player.vx = vx*sp;
+    player.vy = vy*sp;
+    if(vx!==0 && vy!==0){ player.vx *= 0.7071; player.vy *= 0.7071; }
+  }
+
+  function moveEntity(ent){
+    const nx = ent.x + ent.vx;
+    const ny = ent.y + ent.vy;
+    if(canMoveTo(nx, ent.y, ent.r)) ent.x = nx; else ent.vx = 0;
+    if(canMoveTo(ent.x, ny, ent.r)) ent.y = ny; else ent.vy = 0;
+  }
+
+  function ghostAI(){
+    if(pausedForQuestion || won || lost) return;
+    if(freezeTimer > 0){
+      ghost.vx = 0; ghost.vy = 0;
+      return;
+    }
+    ghost.dirTimer -= 1;
+    if(ghost.dirTimer <= 0){
+      ghost.dirTimer = 35 + Math.random()*35;
+      const options = [
+        {vx: ghost.speed, vy:0},
+        {vx:-ghost.speed, vy:0},
+        {vx:0, vy: ghost.speed},
+        {vx:0, vy:-ghost.speed}
+      ];
+      options.forEach(o=>{
+        const tx = ghost.x + o.vx*10, ty = ghost.y + o.vy*10;
+        const ok = canMoveTo(tx, ty, ghost.r);
+        o.ok = ok;
+        const dx = player.x - tx, dy = player.y - ty;
+        o.rank = (ok ? 1 : -999) + (-Math.hypot(dx,dy)) + (Math.random()*40);
+      });
+      options.sort((a,b)=>b.rank-a.rank);
+      const best = options.find(o=>o.ok);
+      if(best){ ghost.vx = best.vx; ghost.vy = best.vy; }
+    }
+    if(!canMoveTo(ghost.x + ghost.vx, ghost.y + ghost.vy, ghost.r)){
+      ghost.dirTimer = 0;
+    }
+  }
+
+  function collide(a,b){
+    return Math.hypot(a.x-b.x, a.y-b.y) < (a.r+b.r-2);
+  }
+
+  function checkPellets(){
+    if(pausedForQuestion || won || lost) return;
+    const gx = Math.floor(player.x / TILE);
+    const gy = Math.floor(player.y / TILE);
+
+    for(const p of pellets){
+      if(p.used) continue;
+      if(p.x===gx && p.y===gy){
+        if(p.kind==="b"){
+          p.used=true;
+          score += 80;
+          freezeTimer = FREEZE_SECONDS * 60;
+          blip(220, 0.06); blip(330, 0.06);
+          updateHUD();
+        }
+        if(p.kind==="q"){
+          p.used=true;
+          blip(520, 0.03);
+          openQuestion();
+          updateHUD();
+        }
+        break;
+      }
+    }
+
+    const remaining = pellets.filter(p => p.kind==="q" && !p.used).length;
+    if(remaining === 0 && !pausedForQuestion) won = true;
+  }
+
+  function openQuestion(){
+    pausedForQuestion = true;
+
+    const qi = qIndexOrder[qCursor % qIndexOrder.length];
+    qCursor += 1;
+    const q = QUESTIONS[qi];
+
+    qtitle.textContent = q.title;
+    qmeta.textContent = `${q.tag || "Desafio"} • ${AUTHOR_NAME}`;
+    qtext.textContent  = q.q;
+
+    answersEl.innerHTML = "";
+    feedbackEl.classList.remove("show");
+    feedbackEl.textContent = "";
+    continueBtn.disabled = true;
+
+    q.options.forEach((opt, idx)=>{
+      const b = document.createElement("button");
+      b.textContent = opt;
+      b.addEventListener("click", ()=>{
+        [...answersEl.querySelectorAll("button")].forEach(x=>x.disabled=true);
+        const correct = (idx === q.correct);
+        if(correct){
+          score += 120;
+          blip(660, 0.04); blip(880, 0.05);
+          feedbackEl.innerHTML = `<span class="ok"><b>✔ Certo.</b></span> ${q.ok}`;
+        } else {
+          lives -= 1;
+          blip(140, 0.10);
+          feedbackEl.innerHTML = `<span class="no"><b>✖ Não.</b></span> ${q.no}`;
+        }
+        updateHUD();
+        feedbackEl.classList.add("show");
+        continueBtn.disabled = false;
+        if(lives <= 0) lost = true;
+      });
+      answersEl.appendChild(b);
+    });
+
+    modal.classList.add("show");
+  }
+
+  function closeModal(){
+    modal.classList.remove("show");
+    pausedForQuestion = false;
+  }
+
+  continueBtn.addEventListener("click", ()=> closeModal());
+
+  restartBtn.addEventListener("click", resetAll);
+  shuffleBtn.addEventListener("click", ()=>{
+    resetQuestions();
+    score += 10;
+    blip(500, 0.03);
+    updateHUD();
+  });
+
+  soundBtn.addEventListener("click", async ()=>{
+    audioOn = !audioOn;
+    if(audioOn){
+      ensureAudio();
+      if(audioCtx.state === "suspended") await audioCtx.resume();
+      soundBtn.textContent = "Som: Ligado";
+      blip(440,0.04); blip(660,0.05);
+    } else {
+      soundBtn.textContent = "Som: Desligado";
+    }
+  });
+
+  startBtn.addEventListener("click", ()=>{
+    startOverlay.classList.remove("show");
+    pausedForQuestion = false;
+    blip(520,0.03); blip(480,0.03);
+  });
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.save();
+    ctx.translate(0,5);
+
+    // paredes
+    for(let y=0;y<MAP_H;y++){
+      for(let x=0;x<MAP_W;x++){
+        if(grid[y][x]===1){
+          const px=x*TILE, py=y*TILE;
+          ctx.fillStyle = "rgba(140,160,255,.18)";
+          ctx.fillRect(px, py, TILE, TILE);
+          ctx.strokeStyle = "rgba(255,255,255,.06)";
+          ctx.strokeRect(px+0.5, py+0.5, TILE-1, TILE-1);
+        }
+      }
+    }
+
+    // pellets
+    for(const p of pellets){
+      if(p.used) continue;
+      const cx = p.x*TILE + TILE/2;
+      const cy = p.y*TILE + TILE/2;
+      if(p.kind==="q"){
+        ctx.fillStyle = "rgba(124,247,197,.95)";
+        ctx.beginPath(); ctx.arc(cx, cy, 5.2, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,.25)";
+        ctx.beginPath(); ctx.moveTo(cx-2.5, cy); ctx.lineTo(cx+2.5, cy); ctx.stroke();
+      } else {
+        ctx.fillStyle = "rgba(255,204,102,.95)";
+        ctx.beginPath(); ctx.arc(cx, cy, 7.0, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    // player
+    const t = performance.now()/180;
+    player.mouth = (pausedForQuestion||won||lost) ? 0.15 : (0.15 + 0.22*Math.abs(Math.sin(t)));
+    const angle = Math.atan2(player.vy, player.vx) || 0;
+    ctx.fillStyle = "rgba(231,236,255,.95)";
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.arc(player.x, player.y, player.r,
+      angle + player.mouth*Math.PI,
+      angle + (2-player.mouth)*Math.PI
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // ghost
+    const frozen = freezeTimer > 0;
+    ctx.fillStyle = frozen ? "rgba(255,204,102,.95)" : "rgba(255,107,107,.95)";
+    const gx = ghost.x + (frozen ? (Math.sin(performance.now()/80)*0.6) : 0);
+    const gy = ghost.y;
+    ctx.beginPath();
+    ctx.arc(gx, gy, ghost.r, Math.PI, 0);
+    ctx.lineTo(gx+ghost.r, gy+ghost.r);
+    ctx.lineTo(gx-ghost.r, gy+ghost.r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.beginPath(); ctx.arc(gx-4, gy-2, 2.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(gx+4, gy-2, 2.2, 0, Math.PI*2); ctx.fill();
+
+    if(won || lost){
+      ctx.fillStyle="rgba(0,0,0,.55)";
+      ctx.fillRect(0, 180, canvas.width, 110);
+      ctx.fillStyle="rgba(231,236,255,.95)";
+      ctx.font="900 20px system-ui";
+      ctx.textAlign="center";
+      ctx.fillText(
+        won ? "Vitória: apanhaste tudo — missão cumprida!" : "Derrota: o fantasma apanhou-te…",
+        canvas.width/2, 224
+      );
+      ctx.font="700 13px system-ui";
+      ctx.fillStyle="rgba(159,176,255,.95)";
+      ctx.fillText("Carrega em Reiniciar para jogar novamente.", canvas.width/2, 255);
+    }
+
+    ctx.restore();
+  }
+
+  let lastWaka = 0;
+  function tick(ts){
+    handleInput();
+
+    if(!pausedForQuestion && freezeTimer > 0){
+      freezeTimer -= 1;
+    }
+
+    moveEntity(player);
+    ghostAI();
+    moveEntity(ghost);
+
+    if(audioOn && !pausedForQuestion && !won && !lost){
+      const moving = Math.abs(player.vx) + Math.abs(player.vy) > 0.01;
+      if(moving && ts - lastWaka > 110){
+        blip(420, 0.025);
+        lastWaka = ts;
+      }
+    }
+
+    if(!pausedForQuestion && !won && !lost && freezeTimer <= 0 && collide(player, ghost)){
+      lives -= 1;
+      blip(140,0.10);
+      updateHUD();
+      player.x=1.5*TILE; player.y=1.5*TILE; player.vx=0; player.vy=0;
+      ghost.x=15.5*TILE; ghost.y=15.5*TILE; ghost.vx=ghost.speed; ghost.vy=0;
+      if(lives<=0) lost=true;
+    }
+
+    checkPellets();
+    updateHUD();
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  modal.addEventListener("click", (e)=>{
+    if(e.target === modal && !continueBtn.disabled){
+      closeModal();
+    }
+  });
+
+  function init(){
+    resetGrid();
+    resetQuestions();
+    score=0; lives=3; won=false; lost=false; freezeTimer=0;
+    player.x=1.5*TILE; player.y=1.5*TILE; player.vx=0; player.vy=0;
+    ghost.x=15.5*TILE; ghost.y=15.5*TILE; ghost.vx=ghost.speed; ghost.vy=0; ghost.dirTimer=0;
+    updateHUD();
+    requestAnimationFrame(tick);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
